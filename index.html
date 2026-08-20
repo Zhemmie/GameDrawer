@@ -124,6 +124,42 @@ input, select, textarea { font-family: inherit; }
 .icon-btn.sync-on { border-color: var(--cart); color: var(--cart-bright); }
 .icon-btn.sync-pending { border-color: var(--danger); color: var(--danger); }
 
+/* ---------- body: cool ambient glow + CRT scanline texture ---------- */
+body {
+  background:
+    radial-gradient(120% 70% at 50% -8%, rgba(255,178,56,.10), transparent 55%),
+    radial-gradient(90% 60% at 50% 120%, rgba(82,227,194,.10), transparent 60%),
+    var(--ink);
+  background-attachment: fixed;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  opacity: .35; mix-blend-mode: overlay;
+  background-image: repeating-linear-gradient(0deg, rgba(82,227,194,.06) 0 1px, transparent 1px 3px);
+}
+.app { position: relative; z-index: 1; }
+
+/* ---------- drawer frame: ridged-plastic panel wrapping the library ---------- */
+.drawer-frame {
+  margin-top: 6px;
+  padding: 18px 16px 30px;
+  border-radius: 12px;
+  position: relative;
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.18) 0 2px, rgba(82,227,194,.02) 2px 8px),
+    linear-gradient(180deg, #232a3d, #171b28);
+  border: 1px solid #0a0c13;
+  box-shadow:
+    0 26px 60px -28px rgba(0,0,0,.85),
+    inset 0 1px 0 rgba(255,178,56,.10),
+    inset 0 -3px 10px rgba(0,0,0,.5);
+}
+.drawer-frame .version {
+  position: absolute; right: 14px; bottom: 8px; z-index: 1; pointer-events: none;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(82,227,194,.28);
+}
+
 /* ---------- now playing: cartridge slots ---------- */
 .hero { margin-bottom: 30px; }
 .hero-label {
@@ -133,11 +169,22 @@ input, select, textarea { font-family: inherit; }
 .filmstrip { display: flex; gap: 14px; overflow-x: auto; padding: 6px 2px 14px; scrollbar-width: thin; }
 .frame {
   flex: 0 0 150px;
-  background: var(--slot);
+  background: linear-gradient(180deg, var(--slot-2), var(--slot));
   border-radius: 8px;
   padding: 0 0 10px;
-  border: 1px solid #ffffff1a;
+  border: 1px solid #00000050;
+  box-shadow: 0 12px 22px -14px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.05);
   overflow: hidden;
+  position: relative;
+}
+/* peeling sticker-label corner — same signature-detail spirit as a cartridge
+   label starting to lift at the edge */
+.frame::after {
+  content: '';
+  position: absolute; top: 0; right: 0; z-index: 6;
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg, transparent 50%, var(--ink) 50%);
+  box-shadow: -2px 2px 4px rgba(0,0,0,.35);
 }
 .frame .label-strip { height: 8px; background: linear-gradient(90deg, var(--cart), var(--signal)); }
 .frame .poster {
@@ -163,11 +210,14 @@ input, select, textarea { font-family: inherit; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .card {
-  background: var(--slot);
-  border: 1px solid #ffffff14;
+  background: linear-gradient(180deg, var(--slot-2), var(--slot));
+  border: 1px solid #00000050;
   border-radius: var(--radius);
   overflow: hidden;
   position: relative;
+  box-shadow:
+    0 10px 20px -14px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.05);
 }
 .card .label-strip { height: 6px; background: linear-gradient(90deg, var(--cart), var(--signal)); }
 .card .body { padding: 12px; }
@@ -233,22 +283,25 @@ input, select, textarea { font-family: inherit; }
 <body>
   <div class="app">
     <div class="topbar">
-      <div class="brand">Game Drawer<small>v1 · games</small></div>
+      <div class="brand">Game Drawer<small>v2 · games</small></div>
       <div class="topbar-actions">
         <button class="icon-btn" id="sync-btn">Sync</button>
       </div>
     </div>
 
-    <div id="stats-root"></div>
-    <div id="hero" class="hero"></div>
-    <div id="list"></div>
+    <div class="drawer-frame">
+      <div id="stats-root"></div>
+      <div id="hero" class="hero"></div>
+      <div id="list"></div>
+      <div class="version">v2</div>
+    </div>
   </div>
 
   <button class="fab" id="fab">+</button>
   <div id="modal-root"></div>
 
 <script>
-const APP_VERSION = "v1";
+const APP_VERSION = "v2";
 /* ===================== Game Drawer — core app ===================== */
 
 const STORE_KEY = 'gamedrawer.items.v1';

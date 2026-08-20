@@ -1,4 +1,4 @@
-const CACHE = 'gamedrawer-v1';
+const CACHE = 'gamedrawer-v2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
