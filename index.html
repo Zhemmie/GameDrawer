@@ -283,7 +283,7 @@ body::before {
 <body>
   <div class="app">
     <div class="topbar">
-      <div class="brand">Game Drawer<small>v2 · games</small></div>
+      <div class="brand">Game Drawer<small>v3 · games</small></div>
       <div class="topbar-actions">
         <button class="icon-btn" id="sync-btn">Sync</button>
       </div>
@@ -293,7 +293,7 @@ body::before {
       <div id="stats-root"></div>
       <div id="hero" class="hero"></div>
       <div id="list"></div>
-      <div class="version">v2</div>
+      <div class="version">v3</div>
     </div>
   </div>
 
@@ -301,7 +301,7 @@ body::before {
   <div id="modal-root"></div>
 
 <script>
-const APP_VERSION = "v2";
+const APP_VERSION = "v3";
 /* ===================== Game Drawer — core app ===================== */
 
 const STORE_KEY = 'gamedrawer.items.v1';
@@ -312,8 +312,20 @@ const SYNC_META_KEY = 'gamedrawer.sync-meta.v1';
 const STATUSES = ['backlog', 'inProgress', 'completed', 'dropped'];
 const STATUS_LABEL = { backlog: 'Backlog', inProgress: 'In Progress', completed: 'Completed', dropped: 'Dropped' };
 
-const GENRES = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports',
-  'Racing', 'Fighting', 'Platformer', 'Shooter', 'Puzzle', 'Horror', 'Indie', 'Party/Board'];
+// Distilled from Wikipedia's List of video game genres cross-referenced with
+// how Steam/IGDB categorize games in practice — the full academic taxonomy
+// runs past 130 micro-subgenres, impractical for a picker, so this keeps the
+// ~35 distinctions people actually reach for day to day.
+const GENRES = [
+  'Action', 'Action RPG', 'Action-Adventure', 'Adventure', '4X',
+  'Battle Royale', "Beat 'em Up", 'Card/Board', 'City Builder',
+  'Fighting', 'Horror', 'Survival Horror', 'Idle/Incremental', 'Life Sim',
+  'MMORPG', 'MOBA', 'Metroidvania', 'Party', 'Platformer', 'Point-and-Click',
+  'Puzzle', 'Racing', 'Real-Time Strategy', 'Rhythm/Music',
+  'Roguelike/Roguelite', 'RPG', 'Sandbox/Open World', 'Shooter', 'Simulation',
+  'Sports', 'Stealth', 'Strategy', 'Survival', 'Tactical RPG', 'Tactics',
+  'Tower Defense', 'Turn-Based Strategy', 'Visual Novel',
+];
 
 /* ---------- deterministic IDs (see ARCHITECTURE-LESSONS.md #1) ---------- */
 function hashStr(s) {
