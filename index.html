@@ -66,16 +66,28 @@
 }
 
 :root {
-  --ink: #12141c;
-  --ink-2: #191c28;
-  --slot: #232a3d;
-  --slot-2: #2b3349;
-  --cart: #ffb238;
-  --cart-bright: #ffd28a;
-  --signal: #52e3c2;
-  --danger: #ef6461;
-  --paper: #e8ecf5;
-  --dust: #7c8499;
+  /* ===== Bright Handheld (default): GameBoy-inspired shell + LCD palette =====
+     Cooler sage-gray plastic (not cream paper) with a genuinely dark LCD
+     screen color — real handhelds have a DARK screen set into a LIGHT shell,
+     which is the main thing that reads as "physical hardware" vs "card". */
+  --ink: #c8cab8;
+  --ink-2: #d5d7c2;
+  --slot: #e2e4d0;
+  --slot-2: #d3d5be;
+  --cart: #3f6b1d;
+  --cart-bright: #6f9411;
+  --signal: #b8691a;
+  --danger: #9c332a;
+  --paper: #232f16;
+  --dust: #6b7360;
+  --hairline: rgba(35,47,22,.30);
+  --sheen: rgba(255,255,255,.65);
+  --scrim: rgba(20,24,10,.55);
+  --star-off: rgba(35,47,22,.2);
+  --bevel-hi: rgba(255,255,255,.75);
+  --bevel-lo: rgba(35,47,22,.4);
+  --screen-bg: #182611;
+  --screen-text: #6f9411;
 
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -84,14 +96,39 @@
   --radius: 10px;
 }
 
+/* ===== Night Cyberpunk: same shared neon signature as Media Shelf / Reading
+   Desk's night mode — this is the deliberate cross-app family trait. ===== */
+body[data-theme="night"] {
+  --ink: #04060a;
+  --ink-2: #070c14;
+  --slot: #0a1420;
+  --slot-2: #0c1626;
+  --cart: #17c9e0;
+  --cart-bright: #8ff5ff;
+  --signal: #ffb02e;
+  --danger: #ff2bd6;
+  --paper: #eaffff;
+  --dust: #4d6b7a;
+  --hairline: rgba(45,231,255,.16);
+  --sheen: rgba(45,231,255,.08);
+  --scrim: rgba(0,0,0,.75);
+  --star-off: rgba(45,231,255,.14);
+  /* Night mode already has its own explicit box-shadow overrides per element —
+     keep the new bevel/screen variables inert here so nothing changes. */
+  --bevel-hi: transparent;
+  --bevel-lo: transparent;
+  --screen-bg: var(--slot);
+  --screen-text: var(--cart-bright);
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
-  background: var(--ink);
   color: var(--paper);
   font-family: var(--font-body);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: color .3s ease;
 }
 
 a { color: inherit; }
@@ -100,129 +137,211 @@ input, select, textarea { font-family: inherit; }
 
 ::selection { background: var(--cart); color: var(--ink); }
 
+/* ---------- body: ambient glow + texture, per theme ---------- */
+body {
+  background:
+    radial-gradient(120% 70% at 50% -8%, rgba(74,122,35,.14), transparent 55%),
+    radial-gradient(90% 60% at 50% 120%, rgba(204,122,31,.10), transparent 60%),
+    var(--ink);
+  background-attachment: fixed;
+  transition: background .3s ease;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  opacity: .3; mix-blend-mode: multiply;
+  background-image: repeating-linear-gradient(0deg, rgba(31,46,15,.05) 0 1px, transparent 1px 3px);
+}
+body[data-theme="night"] {
+  background:
+    radial-gradient(120% 70% at 50% -8%, rgba(23,201,224,.14), transparent 55%),
+    radial-gradient(90% 60% at 50% 120%, rgba(255,43,214,.10), transparent 60%),
+    var(--ink);
+}
+body[data-theme="night"]::before {
+  opacity: .5; mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(45,231,255,.03) 0 1px, transparent 1px 3px),
+    radial-gradient(rgba(45,231,255,.06) 1px, transparent 1.4px);
+  background-size: auto, 4px 4px;
+}
+body[data-theme="night"] .brand, body[data-theme="night"] .hero-label {
+  text-shadow: 0 0 8px rgba(45,231,255,.5), 0 0 22px rgba(45,231,255,.18);
+}
+.app { position: relative; z-index: 1; }
+
+/* ---------- theme toggle: boot-flash transition on switch ---------- */
+.modeflash { position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0; }
+.modeflash.flash-night { animation: flashNight .5s ease-out; }
+.modeflash.flash-day { animation: flashDay .4s ease-out; }
+@keyframes flashNight {
+  0% { opacity: 0; background: #04060a; }
+  8% { opacity: 1; background: #bdf6ff; }
+  16% { opacity: 0; }
+  26% { opacity: .6; background: #2de7ff; }
+  36% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes flashDay {
+  0% { opacity: 0; background: #dcd6c0; }
+  10% { opacity: .8; background: #f4f0dc; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .modeflash.flash-night, .modeflash.flash-day { animation: none; } }
+
 /* ---------- layout shell ---------- */
-/* min-height guarantees a little scrollable slack always exists, even on very
-   short lists — otherwise the fixed-position FAB can permanently sit on top
-   of the last card with no way to scroll it into view. */
 .app { max-width: 1100px; margin: 0 auto; padding: 0 16px 80px; min-height: calc(100vh + 90px); }
 
 .topbar {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px;
   padding: 28px 4px 18px;
-  border-bottom: 1px solid #ffffff14;
+  border-bottom: 1px solid var(--hairline);
   margin-bottom: 18px;
 }
-.brand { flex: 1 1 auto; min-width: 0; font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; }
+.brand { flex: 1 1 auto; min-width: 0; font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; color: var(--paper); }
 .brand small { display: block; font-family: var(--font-mono); font-size: 0.62rem; color: var(--dust); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
-.topbar-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+.topbar-actions { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; }
 .icon-btn {
   white-space: nowrap;
-  background: none; border: 1px solid #ffffff22; color: var(--paper);
+  background: none; border: 1px solid var(--hairline); color: var(--paper);
   border-radius: 8px; padding: 8px 10px; font-size: 0.8rem;
+  transition: border-color .15s, color .15s;
 }
 .icon-btn:hover { border-color: var(--cart); color: var(--cart-bright); }
 .icon-btn.sync-on { border-color: var(--cart); color: var(--cart-bright); }
 .icon-btn.sync-pending { border-color: var(--danger); color: var(--danger); }
-
-/* ---------- body: cool ambient glow + CRT scanline texture ---------- */
-body {
-  background:
-    radial-gradient(120% 70% at 50% -8%, rgba(255,178,56,.10), transparent 55%),
-    radial-gradient(90% 60% at 50% 120%, rgba(82,227,194,.10), transparent 60%),
-    var(--ink);
-  background-attachment: fixed;
+.theme-toggle { display: inline-flex; border: 1px solid var(--hairline); border-radius: 20px; overflow: hidden; }
+.theme-toggle button {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: .06em; padding: 7px 11px;
+  background: transparent; border: 0; color: var(--dust); cursor: pointer;
 }
-body::before {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  opacity: .35; mix-blend-mode: overlay;
-  background-image: repeating-linear-gradient(0deg, rgba(82,227,194,.06) 0 1px, transparent 1px 3px);
-}
-.app { position: relative; z-index: 1; }
+.theme-toggle button[aria-pressed="true"] { background: var(--cart); color: var(--ink); font-weight: 600; }
 
-/* ---------- drawer frame: ridged-plastic panel wrapping the library ---------- */
+/* ---------- drawer frame: ridged panel wrapping the library ---------- */
 .drawer-frame {
   margin-top: 6px;
-  padding: 18px 16px 30px;
-  border-radius: 12px;
+  padding: 20px 16px 32px;
+  border-radius: 22px;
   position: relative;
   background:
-    repeating-linear-gradient(180deg, rgba(0,0,0,.18) 0 2px, rgba(82,227,194,.02) 2px 8px),
-    linear-gradient(180deg, #232a3d, #171b28);
-  border: 1px solid #0a0c13;
+    repeating-linear-gradient(180deg, rgba(31,46,15,.05) 0 2px, rgba(255,255,255,.3) 2px 8px),
+    /* the flat color band + thin hairline creates a visible shell seam, like
+       where the front and back halves of a handheld's case meet */
+    linear-gradient(180deg,
+      var(--ink-2) 0%, var(--ink-2) 41%,
+      var(--hairline) 41%, var(--hairline) 42%,
+      var(--slot-2) 42%, var(--slot-2) 100%);
+  border: 2px solid var(--hairline);
   box-shadow:
-    0 26px 60px -28px rgba(0,0,0,.85),
-    inset 0 1px 0 rgba(255,178,56,.10),
+    0 26px 60px -28px rgba(31,46,15,.35),
+    inset 0 2px 0 var(--bevel-hi),
+    inset 0 -3px 10px rgba(31,46,15,.12);
+  transition: background .3s ease;
+}
+body[data-theme="night"] .drawer-frame {
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.3) 0 2px, rgba(45,231,255,.03) 2px 8px),
+    linear-gradient(180deg, #0a1420, #050a12);
+  box-shadow:
+    0 0 40px -10px rgba(45,231,255,.15),
+    inset 0 0 50px rgba(45,231,255,.03),
     inset 0 -3px 10px rgba(0,0,0,.5);
+}
+/* console screws — small physical-object detail in the corners, like the
+   Phillips-head screws visible on a real handheld's shell */
+.drawer-frame::before, .drawer-frame::after {
+  content: ''; position: absolute; top: 13px; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--ink);
+  box-shadow: inset 0 1.5px 1.5px rgba(0,0,0,.35), inset 0 -1px 0 var(--bevel-hi), 0 1px 1px rgba(255,255,255,.4);
+}
+.drawer-frame::before { right: 14px; }
+.drawer-frame::after { left: 14px; }
+body[data-theme="night"] .drawer-frame::before, body[data-theme="night"] .drawer-frame::after {
+  background: var(--hairline); box-shadow: none;
 }
 .drawer-frame .version {
   position: absolute; right: 14px; bottom: 8px; z-index: 1; pointer-events: none;
   font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
-  color: rgba(82,227,194,.28);
+  color: var(--dust); opacity: .6;
 }
 
-/* ---------- now playing: cartridge slots ---------- */
-.hero { margin-bottom: 30px; }
+/* ---------- now playing: bigger cartridge slots ---------- */
+.hero { margin-bottom: 32px; }
 .hero-label {
-  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--cart-bright); margin-bottom: 10px;
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--cart-bright); margin-bottom: 12px;
 }
-.filmstrip { display: flex; gap: 14px; overflow-x: auto; padding: 6px 2px 14px; scrollbar-width: thin; }
+.filmstrip { display: flex; gap: 16px; overflow-x: auto; padding: 8px 2px 16px; scrollbar-width: thin; }
 .frame {
-  flex: 0 0 150px;
+  flex: 0 0 190px;
   background: linear-gradient(180deg, var(--slot-2), var(--slot));
-  border-radius: 8px;
-  padding: 0 0 10px;
-  border: 1px solid #00000050;
-  box-shadow: 0 12px 22px -14px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.05);
+  border-radius: 14px;
+  padding: 0 0 12px;
+  border: 2px solid var(--hairline);
+  box-shadow: 0 16px 30px -16px rgba(31,46,15,.35), inset 1px 1px 0 var(--bevel-hi), inset -1px -1px 0 var(--bevel-lo);
   overflow: hidden;
   position: relative;
+  transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s;
 }
-/* peeling sticker-label corner — same signature-detail spirit as a cartridge
-   label starting to lift at the edge */
+.frame:hover { transform: translateY(-4px); }
+body[data-theme="night"] .frame { box-shadow: 0 0 24px -8px var(--cart), inset 0 1px 0 rgba(45,231,255,.08); }
 .frame::after {
   content: '';
   position: absolute; top: 0; right: 0; z-index: 6;
-  width: 22px; height: 22px;
+  width: 24px; height: 24px;
   background: linear-gradient(135deg, transparent 50%, var(--ink) 50%);
-  box-shadow: -2px 2px 4px rgba(0,0,0,.35);
+  box-shadow: -2px 2px 5px rgba(31,46,15,.2);
 }
-.frame .label-strip { height: 8px; background: linear-gradient(90deg, var(--cart), var(--signal)); }
+.frame .label-strip { height: 9px; background: linear-gradient(90deg, var(--cart), var(--signal)); }
 .frame .poster {
-  width: 100%; aspect-ratio: 3/4; background-color: var(--ink-2);
-  background-size: cover; background-position: center; margin-bottom: 8px;
+  width: 100%; aspect-ratio: 3/4; background-color: var(--screen-bg);
+  background-size: cover; background-position: center; margin-bottom: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); color: var(--dust); font-size: 0.75rem; text-align: center; padding: 6px;
+  font-family: var(--font-display); color: var(--screen-text); font-size: 0.85rem; text-align: center; padding: 8px;
+  box-shadow: inset 0 3px 6px rgba(0,0,0,.4), inset 0 0 0 2px var(--ink-2);
 }
-.frame .ttl { font-size: 0.8rem; font-weight: 600; line-height: 1.25; margin: 0 10px 4px; }
-.frame .prog { font-family: var(--font-mono); font-size: 0.68rem; color: var(--cart-bright); margin: 0 10px; }
+.frame .ttl { font-size: 0.92rem; font-weight: 600; line-height: 1.25; margin: 0 12px 4px; }
+.frame .prog { font-family: var(--font-mono); font-size: 0.72rem; color: var(--cart-bright); margin: 0 12px; }
 
 /* ---------- genre sections + cards ---------- */
 .genre-section { margin-bottom: 26px; }
-.genre-head {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;
-  user-select: none;
-}
+.genre-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; user-select: none; }
 .genre-head .chev { font-size: 0.7rem; color: var(--dust); transition: transform 0.15s; }
 .genre-head.collapsed .chev { transform: rotate(-90deg); }
-.genre-head h3 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; margin: 0; }
+.genre-head h3 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--paper); }
 .genre-head .n { font-family: var(--font-mono); font-size: 0.7rem; color: var(--dust); }
-.genre-head::after { content: ''; flex: 1; height: 1px; background: #ffffff14; }
+.genre-head::after { content: ''; flex: 1; height: 1px; background: var(--hairline); }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .card {
   background: linear-gradient(180deg, var(--slot-2), var(--slot));
-  border: 1px solid #00000050;
-  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  border-radius: 14px;
   overflow: hidden;
   position: relative;
   box-shadow:
-    0 10px 20px -14px rgba(0,0,0,.7),
-    inset 0 1px 0 rgba(255,255,255,.05);
+    0 10px 20px -14px rgba(31,46,15,.3),
+    inset 1px 1px 0 var(--bevel-hi),
+    inset -1px -1px 0 var(--bevel-lo);
+  transition: transform .18s ease, box-shadow .18s ease;
 }
+.card:hover { transform: translateY(-2px); box-shadow: 0 16px 26px -16px rgba(31,46,15,.4), inset 1px 1px 0 var(--bevel-hi), inset -1px -1px 0 var(--bevel-lo); }
+body[data-theme="night"] .card { box-shadow: 0 10px 20px -14px rgba(0,0,0,.6), inset 0 0 0 1px rgba(45,231,255,.10); }
+/* keep the stat-label color exactly as it was pre-redesign in night mode */
+body[data-theme="night"] .stat .lbl { color: var(--dust); opacity: 1; }
+body[data-theme="night"] .stat { border: 1px solid var(--hairline); box-shadow: none; }
+body[data-theme="night"] .card:hover { box-shadow: 0 0 20px -6px rgba(45,231,255,.35); }
+/* the bright-mode plastic redesign touched border-width/radius/shadow on
+   several shared selectors — pin these back to their exact pre-redesign
+   values in night mode so it stays visually unchanged. */
+body[data-theme="night"] .drawer-frame { border-width: 1px; border-radius: 12px; }
+body[data-theme="night"] .card, body[data-theme="night"] .frame { border-width: 1px; }
+body[data-theme="night"] .card { border-radius: var(--radius); }
+body[data-theme="night"] .frame { border-radius: 8px; }
+body[data-theme="night"] .frame .poster { background-color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hairline); }
 .card .label-strip { height: 6px; background: linear-gradient(90deg, var(--cart), var(--signal)); }
 .card .body { padding: 12px; }
 .card .row1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-.card .ttl { font-weight: 600; font-size: 0.92rem; line-height: 1.3; }
+.card .ttl { font-weight: 600; font-size: 0.92rem; line-height: 1.3; color: var(--paper); }
 .card .meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--dust); margin-top: 2px; }
 .card .stars { color: var(--cart-bright); font-size: 0.78rem; letter-spacing: 1px; margin-top: 6px; }
 
@@ -230,9 +349,11 @@ body::before {
 .led-status { display: flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
 .led-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
 .led-dot.backlog { background: var(--dust); }
-.led-dot.inProgress { background: var(--signal); box-shadow: 0 0 6px var(--signal); }
+.led-dot.inProgress { background: var(--signal); box-shadow: 0 0 6px var(--signal); animation: ledPulse 1.8s ease-in-out infinite; }
 .led-dot.completed { background: var(--cart); box-shadow: 0 0 6px var(--cart); }
 .led-dot.dropped { background: var(--danger); }
+@keyframes ledPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .led-dot.inProgress { animation: none; } }
 .led-status.backlog { color: var(--dust); }
 .led-status.inProgress { color: var(--signal); }
 .led-status.completed { color: var(--cart-bright); }
@@ -244,47 +365,58 @@ body::before {
 .fab {
   position: fixed; right: 20px; bottom: 20px; width: 54px; height: 54px; border-radius: 50%;
   background: var(--cart); color: var(--ink); border: none; font-size: 1.6rem; font-weight: 300;
-  box-shadow: 0 4px 14px #00000060; z-index: 30;
+  box-shadow: 0 4px 14px rgba(31,46,15,.35); z-index: 30;
+  transition: transform .15s ease;
 }
+.fab:hover { transform: scale(1.05); }
+body[data-theme="night"] .fab { box-shadow: 0 0 20px -2px rgba(23,201,224,.6); }
 .modal-back {
-  position: fixed; inset: 0; background: #00000090; z-index: 40;
+  position: fixed; inset: 0; background: var(--scrim); z-index: 40;
   display: flex; align-items: flex-end; justify-content: center;
 }
 @media (min-width: 640px) { .modal-back { align-items: center; } }
 .modal {
   background: var(--ink-2); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
-  border-radius: 14px 14px 0 0; padding: 20px; border: 1px solid #ffffff1a;
+  border-radius: 14px 14px 0 0; padding: 20px; border: 1px solid var(--hairline);
 }
 @media (min-width: 640px) { .modal { border-radius: 14px; } }
-.modal h2 { font-family: var(--font-display); margin: 0 0 14px; font-size: 1.3rem; font-weight: 700; }
+.modal h2 { font-family: var(--font-display); margin: 0 0 14px; font-size: 1.3rem; font-weight: 700; color: var(--paper); }
 .field { margin-bottom: 14px; }
 .field label { display: block; font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dust); margin-bottom: 5px; }
 .field input[type=text], .field input[type=number], .field select, .field textarea {
-  width: 100%; background: var(--ink); border: 1px solid #ffffff22; color: var(--paper);
+  width: 100%; background: var(--ink); border: 1px solid var(--hairline); color: var(--paper);
   border-radius: 8px; padding: 9px 10px; font-size: 0.9rem;
 }
 .field textarea { min-height: 70px; resize: vertical; }
 .field-row { display: flex; gap: 10px; }
 .field-row .field { flex: 1; }
-.star-input { display: flex; gap: 4px; font-size: 1.3rem; color: #ffffff33; }
+.star-input { display: flex; gap: 4px; font-size: 1.3rem; color: var(--star-off); }
 .star-input span.on { color: var(--cart-bright); }
 .btn-row { display: flex; gap: 10px; margin-top: 18px; }
 .btn { flex: 1; padding: 11px; border-radius: 8px; border: none; font-weight: 600; font-size: 0.88rem; }
 .btn.primary { background: var(--cart); color: var(--ink); }
-.btn.ghost { background: none; border: 1px solid #ffffff2a; color: var(--paper); }
+.btn.ghost { background: none; border: 1px solid var(--hairline); color: var(--paper); }
 .btn.danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 20px; }
-.stat { background: var(--slot); border-radius: 10px; padding: 14px; border: 1px solid #ffffff14; }
-.stat .num { font-family: var(--font-mono); font-size: 1.5rem; color: var(--cart-bright); }
-.stat .lbl { font-size: 0.7rem; color: var(--dust); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+.stat {
+  background: var(--screen-bg); border-radius: 8px; padding: 14px;
+  border: 2px solid var(--ink-2);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.04);
+}
+.stat .num { font-family: var(--font-mono); font-size: 1.5rem; color: var(--screen-text); }
+.stat .lbl { font-size: 0.7rem; color: var(--screen-text); opacity: .65; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
 </style>
 </head>
 <body>
   <div class="app">
     <div class="topbar">
-      <div class="brand">Game Drawer<small>v3 · games</small></div>
+      <div class="brand">Game Drawer<small>v5 · games</small></div>
       <div class="topbar-actions">
+        <div class="theme-toggle" id="theme-toggle">
+          <button data-theme="day" aria-pressed="true">Handheld</button>
+          <button data-theme="night" aria-pressed="false">Night</button>
+        </div>
         <button class="icon-btn" id="sync-btn">Sync</button>
       </div>
     </div>
@@ -293,15 +425,16 @@ body::before {
       <div id="stats-root"></div>
       <div id="hero" class="hero"></div>
       <div id="list"></div>
-      <div class="version">v3</div>
+      <div class="version">v5</div>
     </div>
   </div>
 
   <button class="fab" id="fab">+</button>
   <div id="modal-root"></div>
+  <div class="modeflash" id="modeflash"></div>
 
 <script>
-const APP_VERSION = "v3";
+const APP_VERSION = "v5";
 /* ===================== Game Drawer — core app ===================== */
 
 const STORE_KEY = 'gamedrawer.items.v1';
@@ -1058,7 +1191,35 @@ function armTwoTap(btn, confirmLabel, onFire) {
 }
 
 /* ---------- boot ---------- */
+/* ---------- theme (Bright Handheld / Night Cyberpunk) ---------- */
+const THEME_KEY = 'gamedrawer.theme.v1';
+
+function loadTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'day'; } catch { return 'day'; }
+}
+function applyTheme(theme, { flash = false } = {}) {
+  document.body.dataset.theme = theme === 'night' ? 'night' : '';
+  document.querySelectorAll('#theme-toggle button').forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.theme === theme ? 'true' : 'false');
+  });
+  try { localStorage.setItem(THEME_KEY, theme); } catch {}
+  if (flash) {
+    const fl = document.getElementById('modeflash');
+    if (fl) {
+      fl.className = 'modeflash ' + (theme === 'night' ? 'flash-night' : 'flash-day');
+      setTimeout(() => { fl.className = 'modeflash'; }, 600);
+    }
+  }
+}
+function initTheme() {
+  applyTheme(loadTheme());
+  document.querySelectorAll('#theme-toggle button').forEach(b => {
+    b.onclick = () => applyTheme(b.dataset.theme, { flash: true });
+  });
+}
+
 function boot() {
+  initTheme();
   document.getElementById('fab').onclick = openNew;
   document.getElementById('sync-btn').onclick = openSync;
   render();
